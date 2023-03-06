@@ -1,11 +1,11 @@
-#include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
+#include "ISceneManager.h"
+#include "IRoot.h"
+#include "IDriver.h"
 
-#include <iostream>
+int main()
+{
+    IRoot* root = CreateRoot(Platform::OpenGL, 1024, 1024);
 
-using namespace glm;
-using namespace std;
-
-int main(){
-    cout << "all done" << endl;
+    IDriver* driver = root->GetDriver();
+    ISceneManager* scene_manager = root->GetSceneManager();
 }

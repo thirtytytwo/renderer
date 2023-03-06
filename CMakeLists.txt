@@ -6,9 +6,12 @@ project(renderer)
 #find required packages
 
 find_package(glfw3 CONFIG REQUIRED)
-message(STATUS "found glfw3 in ${GLFW3_LIBRARY_DIR}")
+message(STATUS "found glfw3")
 find_package(glm CONFIG REQUIRED)
-message(STATUS "found glm in ${GLM_LIBRARY_DIR}")
+message(STATUS "found glm")
+find_package(glad CONFIG REQUIRED)
+message(STATUS "found glad")
+
 
 #platform setting
 
@@ -41,4 +44,5 @@ add_executable(${CMAKE_PROJECT_NAME} ${SRC_FILES})
 
 target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE glfw)
 target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE glm::glm)
+target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE glad::glad)
 
