@@ -12,11 +12,11 @@ CRoot::CRoot(Platform platform, int width, int height)
         this->height = height;
 
         this->driver = new CDriverOpenGL(width, height);
-        this->scene_manager = new CSceneManager();
+        this->scene_manager = new CSceneManager(this->driver);
     }
     else if(platform ==Platform::Software)
     {
-        //TODO 后续加上软件层
+        //TODO 后续加上软件渲染器
 #if _WIN32
 #elif _APPLE_
 #endif

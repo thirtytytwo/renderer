@@ -1,6 +1,5 @@
 ﻿#include "CDriverOpenGL.h"
 
-#include <glad/glad.h>
 #include <iostream>
 
 CDriverOpenGL::CDriverOpenGL(int width, int height)
@@ -17,7 +16,7 @@ CDriverOpenGL::CDriverOpenGL(int width, int height)
         std::cout<<"the window point is null"<<std::endl;
         glfwTerminate();
     }
-    //glad ptr init
+    //glad init
     if(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)){
         std::cout << "Failed to init glad" << std::endl;
     }

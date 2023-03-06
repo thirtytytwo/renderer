@@ -11,3 +11,6 @@ cmake -B winbuild -S . "-DCMAKE_TOOLCHAIN_FILE=C:/Users/32672/vcpkg/scripts/buil
 cmake --build winbuild
 
 ###mac平台
+
+nothing
+

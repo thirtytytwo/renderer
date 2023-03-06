@@ -11,7 +11,8 @@ find_package(glm CONFIG REQUIRED)
 message(STATUS "found glm")
 find_package(glad CONFIG REQUIRED)
 message(STATUS "found glad")
-
+find_package(assimp CONFIG REQUIRED)
+message(STATUS "found assimp")
 
 #platform setting
 
@@ -45,4 +46,5 @@ add_executable(${CMAKE_PROJECT_NAME} ${SRC_FILES})
 target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE glfw)
 target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE glm::glm)
 target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE glad::glad)
+target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE assimp::assimp)
 
