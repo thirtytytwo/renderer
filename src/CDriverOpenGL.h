@@ -22,6 +22,7 @@ public:
 
     //render func
     //virtual void render() override;
+    
 private:
     GLFWwindow *window;
 };

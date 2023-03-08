@@ -3,6 +3,7 @@
 
 class IGameObject
 {
-    
+public:
+    virtual void render() = 0;
 };
 #endif

@@ -12,7 +12,7 @@ CRoot::CRoot(Platform platform, int width, int height)
         this->height = height;
 
         this->driver = new CDriverOpenGL(width, height);
-        this->scene_manager = new CSceneManager(this->driver);
+        this->scene_manager = new CSceneManager(this->driver, Render_Type::Forward);
     }
     else if(platform ==Platform::Software)
     {

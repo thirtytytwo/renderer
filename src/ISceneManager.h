@@ -4,6 +4,6 @@
 class ISceneManager
 {
 public:
-    //virtual void RenderAll() = 0;
+    virtual void RenderAll() = 0;
 };
 #endif // !__I_SCENEMANAGER_H__
