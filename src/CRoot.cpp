@@ -1,7 +1,5 @@
 ﻿#include "CRoot.h"
-
 #include "CDriverOpenGL.h"
-#include "CSceneManager.h"
 
 CRoot::CRoot(Platform platform, int width, int height)
 {
@@ -12,7 +10,7 @@ CRoot::CRoot(Platform platform, int width, int height)
         this->height = height;
 
         this->driver = new CDriverOpenGL(width, height);
-        this->scene_manager = new CSceneManager(this->driver, Render_Type::Forward);
+        this->scene_manager = new SceneManager(this->driver, Render_Type::Forward);
     }
     else if(platform ==Platform::Software)
     {
@@ -28,7 +26,7 @@ IDriver* CRoot::GetDriver()
 {
     return this->driver;
 }
-ISceneManager* CRoot::GetSceneManager()
+SceneManager* CRoot::GetSceneManager()
 {
     return this->scene_manager;
 }

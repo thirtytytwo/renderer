@@ -17,8 +17,6 @@ public:
 	//render loop func
 	virtual void BeginFrame() = 0;
 	virtual void EndFrame() = 0;
-
-	//render func
-	//virtual void render() = 0;
+	
 };
 #endif // !__I_DRIVER_H__

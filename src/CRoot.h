@@ -1,6 +1,7 @@
 #ifndef __C_ROOT_H__
 #define __C_ROOT_H__
 #include "IRoot.h"
+#include "SceneManager.h"
 
 class CRoot:public IRoot
 {
@@ -10,10 +11,10 @@ public:
     ~CRoot(){};
 
     virtual IDriver* GetDriver() override;
-    virtual ISceneManager* GetSceneManager() override;
+    virtual SceneManager* GetSceneManager() override;
 private:
     IDriver* driver;
-    ISceneManager* scene_manager;
+    SceneManager* scene_manager;
     Platform platform;
     int width, height;
 };
