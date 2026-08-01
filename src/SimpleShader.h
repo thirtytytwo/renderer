@@ -6,24 +6,13 @@
 class SimpleShader : public Shader
 {
 protected:
-    void Vertex(Mesh& mesh, int width, int height) override
+    void Vertex(Mesh& mesh, const RenderContext& ctx) override
     {
-        float fov = Math::PI / 3.0f;
-        float aspect = (float)width / (float)height;
-        float nearPlane = 0.1f;
-        float farPlane = 100.0f;
-
-        Vec4f eye(0.0f, 0.0f, 5.0f, 1.0f);
-        Vec4f target(0.0f, 0.0f, 0.0f, 1.0f);
-        Vec4f up(0.0f, 1.0f, 0.0f, 0.0f);
-
         Mat4 model = Mat4::Identity();
-        Mat4 view = Mat4::LookAt(eye, target, up);
-        Mat4 projection = Mat4::Perspective(fov, aspect, nearPlane, farPlane);
-        Mat4 mvp = projection * view * model;
+        Mat4 mvp = uniforms.projection * uniforms.view * model;
 
         int vertexCount = mesh.triangleCount * 3;
-        screenVerts.resize(vertexCount);
+        pixelBuffer.Allocate(vertexCount);
 
         for (int i = 0; i < vertexCount; i++)
         {
@@ -33,24 +22,32 @@ protected:
 
             if (clipPos.w <= 0.0f)
             {
-                screenVerts[i] = Vec4f(-1e6f, -1e6f, 0, 0);
+                pixelBuffer.screenVerts[i] = Vec4f(-1e6f, -1e6f, 0, 0);
+                pixelBuffer.viewNormals[i] = Vec4f(0, 0, 0, 0);
                 continue;
             }
 
             Vec4f ndcPos = clipPos / Vec4f(clipPos.w);
 
-            float screenX = (ndcPos.x + 1.0f) * 0.5f * width;
-            float screenY = (1.0f - ndcPos.y) * 0.5f * height;
+            float screenX = (ndcPos.x + 1.0f) * 0.5f * ctx.width;
+            float screenY = (ndcPos.y + 1.0f) * 0.5f * ctx.height;
 
-            screenVerts[i] = Vec4f(screenX, screenY, ndcPos.z, 1.0f);
+            pixelBuffer.screenVerts[i] = Vec4f(screenX, screenY, ndcPos.z, 1.0f);
+
+            Vec4f worldNormal = model * mesh.normals[i];
+            worldNormal.w = 0.0f;
+            pixelBuffer.viewNormals[i] = worldNormal.normalized();
         }
     }
 
-    Uint32 Pixel(Uint32& pixel, const SDL_PixelFormat format) override
+    Uint32 Pixel(Uint32& pixel, const SDL_PixelFormat format, const Vec4f& normal) override
     {
-        Uint32 color = SDL_MapRGB(SDL_GetPixelFormatDetails(format), 0,
-                                    (Uint8)255, (Uint8)255, (Uint8)255);
-        return color;
+        Vec4f n = normal.normalized();
+        float NDotL = n.dot(-uniforms.lightDir);
+
+        Vec4f color = Vec4f(NDotL, NDotL, NDotL, 1);
+
+        return SDL_MapRGB(SDL_GetPixelFormatDetails(format), 0, (Uint8)(color.x * 255.f), (Uint8)(color.y * 255.f), (Uint8)(color.z * 255.f));
     }
 };
 

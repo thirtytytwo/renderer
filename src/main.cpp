@@ -1,9 +1,13 @@
 #include <iostream>
 #include <string>
+#include <cstring>
 
 #include "SDL3/SDL.h"
 #include "SDL3/SDL_main.h"
 
+#include "Camera.h"
+#include "Light.h"
+#include "RenderObject.h"
 #include "SimpleShader.h"
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -71,15 +75,30 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    Mesh mesh = Mesh::CreateCube();
+    Mesh cube = Mesh::CreateCube();
+    RenderObject renderObject(std::move(cube), new SimpleShader());
+    renderObject.Setup();
 
-    Shader* shader = new SimpleShader();
+    RenderContext renderContext;
+    renderContext.width = SCREEN_WIDTH;
+    renderContext.height = SCREEN_HEIGHT;
+    renderContext.format = SurfaceHandle->format;
+    int totalPixels = SCREEN_WIDTH * SCREEN_HEIGHT;
+    renderContext.depth = new float[totalPixels];
+    renderContext.color = new Uint32[totalPixels];
+
+    Camera camera;
+    Light light;
+
+    bool rightMouseDown = false;
+    float lastMouseX = 0.0f;
+    float lastMouseY = 0.0f;
+
+    Uint64 lastTime = SDL_GetTicks();
 
     // 事件循环
     bool isRunning = true;
     SDL_Event event;
-
-    Mesh cube = Mesh::CreateCube();
 
     while (isRunning)
     {
@@ -89,16 +108,40 @@ int main(int argc, char** argv)
             switch (event.type)
             {
                 case SDL_EVENT_QUIT:
-                    // 窗口关闭按钮点击
                     isRunning = false;
                     break;
 
                 case SDL_EVENT_KEY_DOWN:
-                    // 键盘按下事件
                     if (event.key.key == SDLK_ESCAPE)
                     {
-                        // 按下 ESC 退出
                         isRunning = false;
+                    }
+                    break;
+
+                case SDL_EVENT_MOUSE_BUTTON_DOWN:
+                    if (event.button.button == SDL_BUTTON_RIGHT)
+                    {
+                        rightMouseDown = true;
+                        lastMouseX = event.button.x;
+                        lastMouseY = event.button.y;
+                    }
+                    break;
+
+                case SDL_EVENT_MOUSE_BUTTON_UP:
+                    if (event.button.button == SDL_BUTTON_RIGHT)
+                    {
+                        rightMouseDown = false;
+                    }
+                    break;
+
+                case SDL_EVENT_MOUSE_MOTION:
+                    if (rightMouseDown)
+                    {
+                        float dx = event.motion.x - lastMouseX;
+                        float dy = event.motion.y - lastMouseY;
+                        lastMouseX = event.motion.x;
+                        lastMouseY = event.motion.y;
+                        camera.ProcessMouse(dx, dy);
                     }
                     break;
 
@@ -107,46 +150,35 @@ int main(int argc, char** argv)
             }
         }
 
-        // TODO: 在这里进行渲染逻辑
+        Uint64 currentTime = SDL_GetTicks();
+        float dt = (float)(currentTime - lastTime) / 1000.0f;
+        lastTime = currentTime;
+
+        const bool* keyState = SDL_GetKeyboardState(NULL);
+        camera.ProcessKeyboard(keyState, dt);
+
+        float aspect = (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT;
+        UniformBuffer ub;
+        ub.view = camera.GetViewMatrix();
+        ub.projection = camera.GetProjectionMatrix(aspect);
+        ub.cameraPos = camera.position;
+        ub.lightDir = light.GetDirection();
+        ub.lightColor = light.GetColor();
+        Shader::SetUniforms(ub);
+
         SDL_LockSurface(SurfaceHandle);
         {
-            SDL_FillSurfaceRect(SurfaceHandle, NULL, 0);
-            Uint32* DestPixels = (Uint32*)SurfaceHandle->pixels;
-            
-            shader->Render(DestPixels, mesh, SCREEN_WIDTH, SCREEN_HEIGHT, SurfaceHandle->format);
-
-            // 使用 OpenMP 并行化
-            // #pragma omp parallel for
-            // for (int y = 0; y < SCREEN_HEIGHT; y++)
-            // {
-            //     for (int x = 0; x < SCREEN_WIDTH; x++)
-            //     {
-            //         DestPixels[y * SCREEN_WIDTH + x] = 0xFF0000FF; // 红色
-            //     }
-            // }
-
-            // for(int y = 0 ; y < SCREEN_HEIGHT; y++)
-            // {
-            //     for(int x = 0; x < SCREEN_WIDTH; x++)
-            //     {
-            //         Uint32 Color = SDL_MapRGB(
-            //             SDL_GetPixelFormatDetails(SurfaceHandle->format),
-            //             0,
-            //             static_cast<uint8_t>(255),
-            //             static_cast<uint8_t>(255),
-            //             static_cast<uint8_t>()
-            //         );
-            //         DestPixels[y * SCREEN_WIDTH + x] = Color;
-            //     }
-            // }
+            renderObject.Render(renderContext);
+            std::memcpy(SurfaceHandle->pixels, renderContext.color, totalPixels * sizeof(Uint32));
         }
         SDL_UnlockSurface(SurfaceHandle);
         SDL_FlipSurface(SurfaceHandle, SDL_FLIP_VERTICAL);
-        // 刷新窗口表面
         SDL_UpdateWindowSurface(WindowHandle);
     }
 
     stbi_image_free(pixelData);
+    delete[] renderContext.depth;
+    delete[] renderContext.color;
     SDL_DestroyWindow(WindowHandle);
     SDL_Quit();
     return 0;

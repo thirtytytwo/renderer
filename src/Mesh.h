@@ -8,6 +8,7 @@ class Mesh
 public:
     int triangleCount = 0;
     Vec4* vertices = nullptr;
+    Vec4* normals = nullptr;
 
     Mesh() = default;
     ~Mesh();
