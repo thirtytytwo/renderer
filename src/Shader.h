@@ -1,6 +1,6 @@
 #ifndef RENDERER_SHADER_INCLUDE
 #define RENDERER_SHADER_INCLUDE
-#include <SDL3/SDL_stdinc.h>
+#include <cstdint>
 #include <algorithm>
 
 #include "Math.h"
@@ -27,12 +27,12 @@ public:
     static void SetUniforms(const UniformBuffer& ub) { uniforms = ub; }
 
     Shader(){};
-    ~Shader(){};
+    virtual ~Shader(){};
     void Render(Mesh& mesh, const RenderContext& ctx)
     {
         int totalPixels = ctx.width * ctx.height;
         std::fill(ctx.depth, ctx.depth + totalPixels, 1.0f);
-        std::fill(ctx.color, ctx.color + totalPixels, (Uint32)0);
+        std::fill(ctx.color, ctx.color + totalPixels, (std::uint32_t)0);
 
         Vertex(mesh, ctx);
 
@@ -48,7 +48,7 @@ public:
                 if(depth > ctx.depth[idx]) continue;
                 ctx.depth[idx] = depth;
 
-                Uint32 color = Pixel(ctx.color[idx], ctx.format, interpNormal);
+                std::uint32_t color = Pixel(ctx.color[idx], ctx.format, interpNormal);
                 ctx.color[idx] = color;
             }
         }
@@ -56,7 +56,7 @@ public:
 
 protected:
     virtual void Vertex(Mesh& mesh, const RenderContext& ctx) = 0;
-    virtual Uint32 Pixel(Uint32& pixel, const SDL_PixelFormat format, const Vec4f& normal) = 0;
+    virtual std::uint32_t Pixel(std::uint32_t& pixel, PixelFormat format, const Vec4f& normal) = 0;
 
 private:
     bool DoBarycentric(const Vec4f& pixel, Vec4f& outNormal, float& outDepth)

@@ -1,3 +1,18 @@
 .claude/
-.vscode/
+.vscode/*
+!.vscode/launch.json
+!.vscode/tasks.json
+!.vscode/settings.json
+
 build/
+compile_commands.json
+
+# 本机编译的第三方依赖（体积大，可用脚本重新生成）
+external/*
+# MiniFB / SIMDe 以源码形式参与构建，需纳入版本管理
+!external/minifb/
+!external/simde/
+!external/compat/
+external/minifb/build/
+
+.DS_Store

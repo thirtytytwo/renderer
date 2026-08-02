@@ -1,9 +1,8 @@
 #ifndef RENDERER_CAMERA_INCLUDE
 #define RENDERER_CAMERA_INCLUDE
 
-#include <SDL3/SDL_stdinc.h>
-
 #include "Math.h"
+#include "Platform/Input.h"
 
 class Camera
 {
@@ -63,7 +62,7 @@ public:
         return Mat4::Perspective(fov, aspect, nearPlane, farPlane);
     }
 
-    void ProcessKeyboard(const bool* keyState, float dt)
+    void ProcessKeyboard(const InputState& input, float dt)
     {
         Vec4f forward = GetForward();
         forward.w = 0.0f;
@@ -72,13 +71,13 @@ public:
 
         float speed = moveSpeed * dt;
 
-        if (keyState[SDL_SCANCODE_W])
+        if (input.IsKeyDown(Key::W))
             position = position + forward * speed;
-        if (keyState[SDL_SCANCODE_S])
+        if (input.IsKeyDown(Key::S))
             position = position - forward * speed;
-        if (keyState[SDL_SCANCODE_A])
+        if (input.IsKeyDown(Key::A))
             position = position - right * speed;
-        if (keyState[SDL_SCANCODE_D])
+        if (input.IsKeyDown(Key::D))
             position = position + right * speed;
     }
 

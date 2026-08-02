@@ -1,14 +1,12 @@
+#include <cstdint>
 #include <iostream>
 #include <string>
-#include <cstring>
-
-#include "SDL3/SDL.h"
-#include "SDL3/SDL_main.h"
 
 #include "Camera.h"
 #include "Light.h"
 #include "RenderObject.h"
 #include "SimpleShader.h"
+#include "Platform/Window.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -21,22 +19,9 @@ const std::string TITLE = "REnderer";
 
 int main(int argc, char** argv)
 {
-    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS))
+    Window window;
+    if (!window.Create(TITLE, SCREEN_WIDTH, SCREEN_HEIGHT))
     {
-        std::cerr << "SDL cant initialize!" << std::endl;
-        return -1;
-    }
-
-    SDL_Window* WindowHandle = SDL_CreateWindow(
-        TITLE.c_str(),
-        SCREEN_WIDTH,
-        SCREEN_HEIGHT,
-        SDL_WINDOW_RESIZABLE
-    );
-
-    if(WindowHandle == nullptr)
-    {
-        std::cerr << "Window create failed!" << std::endl;
         return -1;
     }
 
@@ -58,20 +43,6 @@ int main(int argc, char** argv)
     {
         std::cerr << "Failed to load image: " << imgPath << std::endl;
         std::cerr << "Error: " << stbi_failure_reason() << std::endl;
-        SDL_DestroyWindow(WindowHandle);
-        SDL_Quit();
-        return -1;
-    }
-    
-
-    SDL_Surface* SurfaceHandle = SDL_GetWindowSurface(WindowHandle);
-
-    if(SurfaceHandle == nullptr)
-    {
-        std::cerr << "Surface create failed!" << std::endl;
-        stbi_image_free(pixelData);
-        SDL_DestroyWindow(WindowHandle);
-        SDL_Quit();
         return -1;
     }
 
@@ -79,83 +50,36 @@ int main(int argc, char** argv)
     RenderObject renderObject(std::move(cube), new SimpleShader());
     renderObject.Setup();
 
+    int totalPixels = SCREEN_WIDTH * SCREEN_HEIGHT;
+
     RenderContext renderContext;
     renderContext.width = SCREEN_WIDTH;
     renderContext.height = SCREEN_HEIGHT;
-    renderContext.format = SurfaceHandle->format;
-    int totalPixels = SCREEN_WIDTH * SCREEN_HEIGHT;
+    renderContext.format = Window::Format();
     renderContext.depth = new float[totalPixels];
-    renderContext.color = new Uint32[totalPixels];
+    renderContext.color = new std::uint32_t[totalPixels];
 
     Camera camera;
     Light light;
 
-    bool rightMouseDown = false;
-    float lastMouseX = 0.0f;
-    float lastMouseY = 0.0f;
-
-    Uint64 lastTime = SDL_GetTicks();
-
     // 事件循环
-    bool isRunning = true;
-    SDL_Event event;
-
-    while (isRunning)
+    while (window.PollEvents())
     {
-        // 处理所有待处理的事件
-        while (SDL_PollEvent(&event))
+        const InputState& input = window.Input();
+
+        if (input.IsKeyDown(Key::Escape))
         {
-            switch (event.type)
-            {
-                case SDL_EVENT_QUIT:
-                    isRunning = false;
-                    break;
-
-                case SDL_EVENT_KEY_DOWN:
-                    if (event.key.key == SDLK_ESCAPE)
-                    {
-                        isRunning = false;
-                    }
-                    break;
-
-                case SDL_EVENT_MOUSE_BUTTON_DOWN:
-                    if (event.button.button == SDL_BUTTON_RIGHT)
-                    {
-                        rightMouseDown = true;
-                        lastMouseX = event.button.x;
-                        lastMouseY = event.button.y;
-                    }
-                    break;
-
-                case SDL_EVENT_MOUSE_BUTTON_UP:
-                    if (event.button.button == SDL_BUTTON_RIGHT)
-                    {
-                        rightMouseDown = false;
-                    }
-                    break;
-
-                case SDL_EVENT_MOUSE_MOTION:
-                    if (rightMouseDown)
-                    {
-                        float dx = event.motion.x - lastMouseX;
-                        float dy = event.motion.y - lastMouseY;
-                        lastMouseX = event.motion.x;
-                        lastMouseY = event.motion.y;
-                        camera.ProcessMouse(dx, dy);
-                    }
-                    break;
-
-                default:
-                    break;
-            }
+            break;
         }
 
-        Uint64 currentTime = SDL_GetTicks();
-        float dt = (float)(currentTime - lastTime) / 1000.0f;
-        lastTime = currentTime;
+        float dt = window.DeltaTime();
 
-        const bool* keyState = SDL_GetKeyboardState(NULL);
-        camera.ProcessKeyboard(keyState, dt);
+        camera.ProcessKeyboard(input, dt);
+
+        if (input.IsMouseDown(MouseButton::Right))
+        {
+            camera.ProcessMouse(input.MouseDeltaX(), input.MouseDeltaY());
+        }
 
         float aspect = (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT;
         UniformBuffer ub;
@@ -166,20 +90,16 @@ int main(int argc, char** argv)
         ub.lightColor = light.GetColor();
         Shader::SetUniforms(ub);
 
-        SDL_LockSurface(SurfaceHandle);
+        renderObject.Render(renderContext);
+
+        if (!window.Present(renderContext.color, SCREEN_WIDTH, SCREEN_HEIGHT))
         {
-            renderObject.Render(renderContext);
-            std::memcpy(SurfaceHandle->pixels, renderContext.color, totalPixels * sizeof(Uint32));
+            break;
         }
-        SDL_UnlockSurface(SurfaceHandle);
-        SDL_FlipSurface(SurfaceHandle, SDL_FLIP_VERTICAL);
-        SDL_UpdateWindowSurface(WindowHandle);
     }
 
     stbi_image_free(pixelData);
     delete[] renderContext.depth;
     delete[] renderContext.color;
-    SDL_DestroyWindow(WindowHandle);
-    SDL_Quit();
     return 0;
 }

@@ -1,0 +1,35 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug Renderer (lldb)",
+            "type": "lldb-dap",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/Renderer",
+            "args": [],
+            "cwd": "${workspaceFolder}/build",
+            "stopOnEntry": false,
+            "debuggerRoot": "${workspaceFolder}",
+            "preRunCommands": [
+                "settings set target.x86-disassembly-flavor intel"
+            ],
+            "preLaunchTask": "build (Debug)"
+        },
+        {
+            "name": "Run Renderer (no debug)",
+            "type": "lldb-dap",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/Renderer",
+            "args": [],
+            "cwd": "${workspaceFolder}/build",
+            "stopOnEntry": false,
+            "preLaunchTask": "build (Release)"
+        },
+        {
+            "name": "Attach to Renderer",
+            "type": "lldb-dap",
+            "request": "attach",
+            "program": "${workspaceFolder}/build/Renderer"
+        }
+    ]
+}

@@ -1,16 +1,17 @@
 #ifndef RENDERER_RENDERRESOURCES_INCLUDE
 #define RENDERER_RENDERRESOURCES_INCLUDE
 
-#include <SDL3/SDL_stdinc.h>
-#include <SDL3/SDL_pixels.h>
+#include <cstdint>
+
+#include "../Platform/PixelFormat.h"
 
 struct RenderContext
 {
-    int width;
-    int height;
-    SDL_PixelFormat format;
+    int width = 0;
+    int height = 0;
+    PixelFormat format = PixelFormat::ARGB8888;
     float* depth = nullptr;
-    Uint32* color = nullptr;
+    std::uint32_t* color = nullptr;
 };
 
 #endif

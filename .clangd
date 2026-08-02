@@ -1,0 +1,40 @@
+CompileFlags:
+  # .cpp 文件使用 build/compile_commands.json 中的真实编译参数
+  CompilationDatabase: build
+
+  # 头文件（.h）不在编译数据库中，clangd 会用下面这组 fallback 参数补全，
+  # 否则会误报 MiniFB / immintrin 找不到。
+  #
+  # 注意：这里刻意不写 -isysroot。
+  # 因为 Add 是无条件追加的，若写死 SDK 路径，.cpp 文件会同时得到
+  # compile_commands.json 里的 Xcode SDK 和这里的 CLT SDK，两个 -isysroot
+  # 冲突会让 <iostream> / <ios> 解析错乱，报出 "incomplete type 'std::ios_base'"。
+  # 不写则由 clang 驱动自动选择正确 SDK，行为与命令行编译完全一致。
+  Add:
+    - -xc++
+    - -std=c++17
+    - -I/Users/ethan32/Desktop/renderer/external/compat/arm
+    - -I/Users/ethan32/Desktop/renderer/external/simde
+    - -I/Users/ethan32/Desktop/renderer/include
+    - -I/Users/ethan32/Desktop/renderer/external/minifb/include
+    - -Wno-nested-anon-types
+    - -Wno-gnu-anonymous-struct
+    - -Wno-nonportable-include-path
+
+  # macOS 文件系统大小写不敏感：若 src/ 进入头文件搜索路径，
+  # 标准库内部的 #include <math.h> 会被错误解析成本项目的 src/Math.h，
+  # 引发一连串虚假的 "libc++ header not found" 报错。
+  Remove:
+    - -I*/renderer/src
+    - -I*/renderer/src/*
+    - -Isrc
+    - -Isrc/*
+
+Diagnostics:
+  UnusedIncludes: None
+
+Index:
+  Background: Build
+
+InlayHints:
+  Enabled: false

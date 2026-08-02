@@ -1,0 +1,18 @@
+{
+    "clangd.arguments": [
+        "--compile-commands-dir=${workspaceFolder}/build",
+        "--background-index",
+        "--header-insertion=never",
+        "--clang-tidy=false"
+    ],
+    "files.associations": {
+        "*.h": "cpp"
+    },
+    "C_Cpp.intelliSenseEngine": "disabled",
+    "lldb-dap.executable-path": "/Applications/Xcode.app/Contents/Developer/usr/bin/lldb-dap",
+    "cmake.buildDirectory": "${workspaceFolder}/build",
+    "cmake.cmakePath": "${env:HOME}/tools/cmake-3.31.6-macos-universal/CMake.app/Contents/bin/cmake",
+    "terminal.integrated.env.osx": {
+        "PATH": "${env:HOME}/tools/cmake-3.31.6-macos-universal/CMake.app/Contents/bin:${env:PATH}"
+    }
+}

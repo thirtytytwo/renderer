@@ -1,6 +1,8 @@
 #ifndef RENDERER_SIMPLE_SHADER_INCLUDE
 #define RENDERER_SIMPLE_SHADER_INCLUDE
 
+#include <cstdint>
+
 #include "Shader.h"
 
 class SimpleShader : public Shader
@@ -30,6 +32,8 @@ protected:
             Vec4f ndcPos = clipPos / Vec4f(clipPos.w);
 
             float screenX = (ndcPos.x + 1.0f) * 0.5f * ctx.width;
+            // 保持 Y 向上（数学坐标系），使屏幕空间三角形绕序与 DoBarycentric
+            // 中的 area > 0 背面剔除判据一致。上下翻转在呈现阶段统一处理。
             float screenY = (ndcPos.y + 1.0f) * 0.5f * ctx.height;
 
             pixelBuffer.screenVerts[i] = Vec4f(screenX, screenY, ndcPos.z, 1.0f);
@@ -40,14 +44,14 @@ protected:
         }
     }
 
-    Uint32 Pixel(Uint32& pixel, const SDL_PixelFormat format, const Vec4f& normal) override
+    std::uint32_t Pixel(std::uint32_t& pixel, PixelFormat format, const Vec4f& normal) override
     {
         Vec4f n = normal.normalized();
         float NDotL = n.dot(-uniforms.lightDir);
 
         Vec4f color = Vec4f(NDotL, NDotL, NDotL, 1);
 
-        return SDL_MapRGB(SDL_GetPixelFormatDetails(format), 0, (Uint8)(color.x * 255.f), (Uint8)(color.y * 255.f), (Uint8)(color.z * 255.f));
+        return PackColorF(format, color.x, color.y, color.z, 1.0f);
     }
 };
 
