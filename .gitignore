@@ -1,8 +1,5 @@
 .claude/
-.vscode/*
-!.vscode/launch.json
-!.vscode/tasks.json
-!.vscode/settings.json
+.vscode/
 
 build/
 compile_commands.json

@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # 启用 OpenMP
-#find_package(OpenMP)
+find_package(OpenMP)
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
@@ -20,7 +20,6 @@ add_subdirectory(${CMAKE_SOURCE_DIR}/external/minifb EXCLUDE_FROM_ALL)
 
 file(GLOB SOURCES
     src/*.h src/*.cpp
-    src/Render/*.h src/Render/*.cpp
     src/Platform/*.h src/Platform/*.cpp
 )
 add_executable(${PROJECT_NAME} ${SOURCES})
@@ -29,6 +28,17 @@ add_executable(${PROJECT_NAME} ${SOURCES})
 # src/Math.h 会遮蔽 libc++ 的 <math.h>，导致标准库头文件链断裂。
 # 项目内头文件统一使用相对路径引用。
 target_link_libraries(${PROJECT_NAME} PRIVATE minifb)
+
+# ---------------- 网格加载库（单文件库，随项目一起编译） ----------------
+# ufbx: FBX 加载；tinyobjloader: OBJ 加载
+target_sources(${PROJECT_NAME} PRIVATE
+    ${CMAKE_SOURCE_DIR}/external/ufbx/ufbx.c
+    ${CMAKE_SOURCE_DIR}/external/tinyobjloader/tiny_obj_loader.cc
+)
+target_include_directories(${PROJECT_NAME} PRIVATE
+    ${CMAKE_SOURCE_DIR}/external/ufbx
+    ${CMAKE_SOURCE_DIR}/external/tinyobjloader
+)
 
 if(APPLE)
     if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64")
@@ -44,9 +54,9 @@ if(APPLE)
 endif()
 
 # 链接 OpenMP
-# if(OpenMP_CXX_FOUND)
-#     target_link_libraries(${PROJECT_NAME} PRIVATE OpenMP::OpenMP_CXX)
-# endif()
+if(OpenMP_CXX_FOUND)
+    target_link_libraries(${PROJECT_NAME} PRIVATE OpenMP::OpenMP_CXX)
+endif()
 
 # 复制 resources 文件夹到输出目录
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD

@@ -1,11 +1,12 @@
 #include "Mesh.h"
 
 Mesh::Mesh(Mesh&& other) noexcept
-    : triangleCount(other.triangleCount), vertices(other.vertices), normals(other.normals)
+    : triangleCount(other.triangleCount), vertices(other.vertices), normals(other.normals), uvs(other.uvs)
 {
     other.triangleCount = 0;
     other.vertices = nullptr;
     other.normals = nullptr;
+    other.uvs = nullptr;
 }
 
 Mesh& Mesh::operator=(Mesh&& other) noexcept
@@ -14,12 +15,15 @@ Mesh& Mesh::operator=(Mesh&& other) noexcept
     {
         delete[] vertices;
         delete[] normals;
+        delete[] uvs;
         triangleCount = other.triangleCount;
         vertices = other.vertices;
         normals = other.normals;
+        uvs = other.uvs;
         other.triangleCount = 0;
         other.vertices = nullptr;
         other.normals = nullptr;
+        other.uvs = nullptr;
     }
     return *this;
 }
@@ -28,6 +32,7 @@ Mesh::~Mesh()
 {
     delete[] vertices;
     delete[] normals;
+    delete[] uvs;
 }
 
 Mesh Mesh::CreateCube()
@@ -82,6 +87,21 @@ Mesh Mesh::CreateCube()
     mesh.vertices[30] = v0; mesh.vertices[31] = v1; mesh.vertices[32] = v5;
     mesh.vertices[33] = v0; mesh.vertices[34] = v5; mesh.vertices[35] = v4;
     for (int i = 30; i < 36; i++) mesh.normals[i] = nDown;
+
+    // UV 展开：六个面的顶点绕序均对应同一模式，
+    // 从各面外侧看贴图保持正立（u 向右，v 向下，(0,0) 为图像顶部）
+    mesh.uvs = new Vec4[36];
+    const Vec4 faceUV[6] = {
+        Vec4(0.0f, 1.0f, 0.0f, 0.0f), Vec4(1.0f, 1.0f, 0.0f, 0.0f), Vec4(1.0f, 0.0f, 0.0f, 0.0f),
+        Vec4(0.0f, 1.0f, 0.0f, 0.0f), Vec4(1.0f, 0.0f, 0.0f, 0.0f), Vec4(0.0f, 0.0f, 0.0f, 0.0f)
+    };
+    for (int face = 0; face < 6; face++)
+    {
+        for (int i = 0; i < 6; i++)
+        {
+            mesh.uvs[face * 6 + i] = faceUV[i];
+        }
+    }
 
     return mesh;
 }

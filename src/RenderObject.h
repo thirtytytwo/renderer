@@ -1,44 +1,47 @@
 #ifndef RENDERER_RENDEROBJECT_INCLUDE
 #define RENDERER_RENDEROBJECT_INCLUDE
 
+#include <cstdint>
 #include <utility>
 
 #include "Mesh.h"
-#include "Shader.h"
-#include "Render/RenderResources.h"
+#include "Material.h"
+#include "Platform/PixelFormat.h"
 
 class RenderObject
 {
     Mesh mesh;
-    Shader* shader;
+    Material* material;
 
 public:
-    RenderObject(Mesh&& m, Shader* s)
-        : mesh(std::move(m)), shader(s)
+    RenderObject(Mesh&& m, Material* mat)
+        : mesh(std::move(m)), material(mat)
     {
     }
 
     ~RenderObject()
     {
-        delete shader;
+        delete material;
     }
 
     RenderObject(const RenderObject&) = delete;
     RenderObject& operator=(const RenderObject&) = delete;
 
     RenderObject(RenderObject&& other) noexcept
-        : mesh(std::move(other.mesh)), shader(other.shader)
+        : mesh(std::move(other.mesh)), material(other.material)
     {
-        other.shader = nullptr;
+        other.material = nullptr;
     }
 
     void Setup()
     {
     }
 
-    void Render(const RenderContext& ctx)
+    void Render(int width, int height, PixelFormat format,
+                float* depthBuffer, std::uint32_t* colorBuffer)
     {
-        shader->Render(mesh, ctx);
+        material->GetShader()->Render(mesh, width, height, format,
+                                      depthBuffer, colorBuffer);
     }
 };
 

@@ -3,12 +3,13 @@
 
 #include <cstdint>
 
+#include "Material.h"
 #include "Shader.h"
 
 class SimpleShader : public Shader
 {
 protected:
-    void Vertex(Mesh& mesh, const RenderContext& ctx) override
+    void Vertex(Mesh& mesh, int width, int height) override
     {
         Mat4 model = Mat4::Identity();
         Mat4 mvp = uniforms.projection * uniforms.view * model;
@@ -26,32 +27,40 @@ protected:
             {
                 pixelBuffer.screenVerts[i] = Vec4f(-1e6f, -1e6f, 0, 0);
                 pixelBuffer.viewNormals[i] = Vec4f(0, 0, 0, 0);
+                pixelBuffer.uvs[i] = Vec4f(0, 0, 0, 0);
+                pixelBuffer.invWs[i] = 0.0f;
                 continue;
             }
 
             Vec4f ndcPos = clipPos / Vec4f(clipPos.w);
 
-            float screenX = (ndcPos.x + 1.0f) * 0.5f * ctx.width;
+            float screenX = (ndcPos.x + 1.0f) * 0.5f * width;
             // 保持 Y 向上（数学坐标系），使屏幕空间三角形绕序与 DoBarycentric
             // 中的 area > 0 背面剔除判据一致。上下翻转在呈现阶段统一处理。
-            float screenY = (ndcPos.y + 1.0f) * 0.5f * ctx.height;
+            float screenY = (ndcPos.y + 1.0f) * 0.5f * height;
 
             pixelBuffer.screenVerts[i] = Vec4f(screenX, screenY, ndcPos.z, 1.0f);
+            // 保存 1/w_clip，光栅化阶段透视矫正插值用
+            pixelBuffer.invWs[i] = 1.0f / clipPos.w;
 
             Vec4f worldNormal = model * mesh.normals[i];
             worldNormal.w = 0.0f;
             pixelBuffer.viewNormals[i] = worldNormal.normalized();
+
+            pixelBuffer.uvs[i] = mesh.uvs[i];
         }
     }
 
-    std::uint32_t Pixel(std::uint32_t& pixel, PixelFormat format, const Vec4f& normal) override
+    std::uint32_t Pixel(std::uint32_t& pixel, PixelFormat format, const Vec4f& normal, const Vec4f& uv) override
     {
         Vec4f n = normal.normalized();
         float NDotL = n.dot(-uniforms.lightDir);
 
-        Vec4f color = Vec4f(NDotL, NDotL, NDotL, 1);
+        // 采样主色贴图，叠加兰伯特光照
+        Vec4f albedo = material->Sample(uv.x, uv.y);
+        Vec4f color = albedo * NDotL;
 
-        return PackColorF(format, color.x, color.y, color.z, 1.0f);
+        return PackColorF(format, color.x, color.y, color.z, albedo.w);
     }
 };
 
