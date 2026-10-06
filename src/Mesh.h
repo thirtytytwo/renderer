@@ -21,6 +21,10 @@ public:
 
     static Mesh CreateCube();
 
+    // UV 球：radius 半径，segments 经纬分段数（最小 3）。
+    // 法线取归一化球面位置（光滑着色），UV 按经纬度展开（u 绕经度，v 由北极到南极）。
+    static Mesh CreateSphere(float radius = 0.5f, int segments = 32);
+
     // 从文件加载网格（支持 .obj / .fbx，仅几何数据，不加载材质）。
     // normalize = true 时将模型平移到原点居中、统一缩放至最长边为 1（与 CreateCube 同尺度）。
     // 失败返回空网格（triangleCount == 0），错误信息输出到 stderr。

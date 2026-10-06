@@ -35,6 +35,75 @@ Mesh::~Mesh()
     delete[] uvs;
 }
 
+Mesh Mesh::CreateSphere(float radius, int segments)
+{
+    if (segments < 3) segments = 3;
+
+    Mesh mesh;
+    int latSegments = segments; // 纬度分段（北极 → 南极）
+    int lonSegments = segments; // 经度分段（绕 y 轴一周）
+
+    // 极点处每格有一个面积为 0 的退化三角形，光栅化时被 area > 0 测试自然剔除
+    mesh.triangleCount = latSegments * lonSegments * 2;
+    int vertexCount = mesh.triangleCount * 3;
+    mesh.vertices = new Vec4[vertexCount];
+    mesh.normals = new Vec4[vertexCount];
+    mesh.uvs = new Vec4[vertexCount];
+
+    // 球面参数化：theta 纬度角（北极 0 → 南极 π），phi 经度角（0 → 2π，绕 y 轴）
+    auto point = [&](int lat, int lon) -> Vec4
+    {
+        float theta = Math::PI * (float)lat / (float)latSegments;
+        float phi = 2.0f * Math::PI * (float)lon / (float)lonSegments;
+        float sinTheta = std::sin(theta);
+        return Vec4(radius * sinTheta * std::cos(phi),
+                    radius * std::cos(theta),
+                    radius * sinTheta * std::sin(phi),
+                    0.0f);
+    };
+    // v 由北极到南极 0 → 1，符合「v 向下，(0,0) 为图像顶部」的采样约定
+    auto uv = [&](int lat, int lon) -> Vec4
+    {
+        return Vec4((float)lon / (float)lonSegments, (float)lat / (float)latSegments, 0.0f, 0.0f);
+    };
+
+    int idx = 0;
+    for (int i = 0; i < latSegments; i++)
+    {
+        for (int j = 0; j < lonSegments; j++)
+        {
+            Vec4 p00 = point(i, j);
+            Vec4 p01 = point(i, j + 1);
+            Vec4 p10 = point(i + 1, j);
+            Vec4 p11 = point(i + 1, j + 1);
+
+            // 绕序保证从球外侧看为逆时针（配合光栅化 area > 0 的正面判定）
+            Vec4 tri[2][3] = {
+                { p00, p11, p10 },
+                { p00, p01, p11 }
+            };
+            Vec4 triUV[2][3] = {
+                { uv(i, j), uv(i + 1, j + 1), uv(i + 1, j) },
+                { uv(i, j), uv(i, j + 1),     uv(i + 1, j + 1) }
+            };
+
+            for (int t = 0; t < 2; t++)
+            {
+                for (int v = 0; v < 3; v++)
+                {
+                    mesh.vertices[idx] = tri[t][v];
+                    // 球面法线即归一化位置（w 已为 0，归一化不受 w 影响）
+                    mesh.normals[idx] = tri[t][v].normalized();
+                    mesh.uvs[idx] = triUV[t][v];
+                    idx++;
+                }
+            }
+        }
+    }
+
+    return mesh;
+}
+
 Mesh Mesh::CreateCube()
 {
     Mesh mesh;

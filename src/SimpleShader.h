@@ -28,6 +28,7 @@ protected:
                 pixelBuffer.screenVerts[i] = Vec4f(-1e6f, -1e6f, 0, 0);
                 pixelBuffer.viewNormals[i] = Vec4f(0, 0, 0, 0);
                 pixelBuffer.uvs[i] = Vec4f(0, 0, 0, 0);
+                pixelBuffer.worldPositions[i] = Vec4f(0, 0, 0, 0);
                 pixelBuffer.invWs[i] = 0.0f;
                 continue;
             }
@@ -47,12 +48,18 @@ protected:
             worldNormal.w = 0.0f;
             pixelBuffer.viewNormals[i] = worldNormal.normalized();
 
+            // 世界空间坐标，光栅化阶段透视矫正插值后供像素着色使用
+            Vec4f worldPos = model * pos;
+            pixelBuffer.worldPositions[i] = worldPos;
+
             pixelBuffer.uvs[i] = mesh.uvs[i];
         }
     }
 
-    std::uint32_t Pixel(std::uint32_t& pixel, PixelFormat format, const Vec4f& normal, const Vec4f& uv) override
+    std::uint32_t Pixel(std::uint32_t& pixel, PixelFormat format, const Vec4f& worldPos,
+                        const Vec4f& normal, const Vec4f& uv) override
     {
+        (void)worldPos; // 兰伯特模型不需要位置信息
         Vec4f n = normal.normalized();
         float NDotL = n.dot(-uniforms.lightDir);
 

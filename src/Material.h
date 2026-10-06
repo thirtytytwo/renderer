@@ -57,6 +57,30 @@ public:
 
     Shader* GetShader() const { return shader; }
 
+    // ---------------- 反射式查询接口 ----------------
+    // C++ 没有真正的反射，这里用「字符串名字 + 虚函数」模拟：
+    // 着色器按名字询问材质，不需要在编译期知道子类持有哪些成员变量，
+    // 材质上没有对应属性时回退到基类默认实现，不影响编译与运行。
+
+    // 按名字采样贴图。
+    // 基类只有一张主贴图，忽略名字直接采样主贴图；
+    // 子类可按名字分发到不同贴图，未识别的名字须回退到基类实现。
+    virtual Vec4f SampleTexture(const char* name, float u, float v) const
+    {
+        (void)name;
+        return Sample(u, v);
+    }
+
+    // 按名字获取标量属性。
+    // 基类不持有任何属性，直接返回调用方给的默认值；
+    // 子类重写以暴露自身属性（如 roughness / metallic），
+    // 未识别的名字须回退到基类实现。
+    virtual float GetFloat(const char* name, float defaultValue) const
+    {
+        (void)name;
+        return defaultValue;
+    }
+
     // 贴图采样。
     // 采样位置约定：UV ∈ [0,1]；u 向右，v 向下，(0,0) 对应贴图第一行（图像顶部）。
     // 采样逻辑：repeat 环绕 + 最近邻过滤，返回 RGBA (0~1) 浮点颜色。

@@ -6,18 +6,14 @@
 #include "Camera.h"
 #include "Light.h"
 #include "Material.h"
+#include "PBRMaterial.h"
+#include "PBRShader.h"
 #include "RenderObject.h"
-#include "SimpleShader.h"
 #include "TextOverlay.h"
 #include "Platform/Window.h"
 
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
-
-#define IMAGE_DIRECTORY "resources/image/"
-
-const int SCREEN_WIDTH = 800;
-const int SCREEN_HEIGHT = 600;
+const int SCREEN_WIDTH = 1280;
+const int SCREEN_HEIGHT = 720;
 const std::string TITLE = "REnderer";
 
 // 渲染上下文：颜色/深度缓冲及其描述
@@ -65,44 +61,26 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    // 使用stbi读取图片
-    int imgWidth, imgHeight, imgChannels;
-    std::string imgPath = IMAGE_DIRECTORY + std::string("test.png");
-
-    // stbi_load 会自动分配内存，使用完后需要用 stbi_image_free 释放
-    // 最后一个参数 4 表示强制转换为 RGBA 4通道
-    unsigned char* pixelData = stbi_load(
-        imgPath.c_str(),
-        &imgWidth,
-        &imgHeight,
-        &imgChannels,
-        4  // 强制 RGBA 格式
-    );
-
-    if (pixelData == nullptr)
-    {
-        std::cerr << "Failed to load image: " << imgPath << std::endl;
-        std::cerr << "Error: " << stbi_failure_reason() << std::endl;
-        return -1;
-    }
-
-    Mesh cube = Mesh::CreateCube();
-    // 命令行传入模型路径时加载外部模型（.obj/.fbx），失败则回退到内置立方体
+    Mesh sphere = Mesh::CreateSphere();
+    // 命令行传入模型路径时加载外部模型（.obj/.fbx），失败则回退到内置球体
     if (argc > 1 && argv[1][0] != '-')
     {
         Mesh loaded = Mesh::LoadFromFile(argv[1]);
         if (loaded.triangleCount > 0)
         {
-            cube = std::move(loaded);
+            sphere = std::move(loaded);
         }
         else
         {
-            std::cerr << "模型加载失败，回退到内置立方体: " << argv[1] << std::endl;
+            std::cerr << "模型加载失败，回退到内置球体: " << argv[1] << std::endl;
         }
     }
-    Material* material = new Material(new SimpleShader());
-    material->SetTexture(pixelData, imgWidth, imgHeight);
-    RenderObject renderObject(std::move(cube), material);
+
+    // PBR 材质球：不使用贴图（albedo 采样回退为白色），仅粗糙度 / 金属度参数
+    PBRMaterial* material = new PBRMaterial(new PBRShader());
+    material->SetRoughness(0.35f);
+    material->SetMetallic(0.0f);
+    RenderObject renderObject(std::move(sphere), material);
     renderObject.Setup();
 
     int totalPixels = SCREEN_WIDTH * SCREEN_HEIGHT;
@@ -172,7 +150,6 @@ int main(int argc, char** argv)
         }
     }
 
-    stbi_image_free(pixelData);
     delete[] renderContext.depth;
     delete[] renderContext.color;
     return 0;

@@ -343,9 +343,11 @@ class Math
 public:
     static constexpr float PI = 3.14159265358979323846f;
 
-    static double SignedTriangleArea(Vec4 a, Vec4 b, Vec4 c)
+    // 屏幕空间有符号三角形面积（逆时针为正），用于背面剔除与重心坐标。
+    // 光栅化内层循环高频调用，用 float + 引用传参避免按值拷贝
+    static float SignedTriangleArea(const Vec4& a, const Vec4& b, const Vec4& c)
     {
-        return 0.5 * ((b.y - a.y) * (b.x + a.x) + (c.y - b.y) * (c.x + b.x) + (a.y - c.y) * (a.x + c.x));
+        return 0.5f * ((b.y - a.y) * (b.x + a.x) + (c.y - b.y) * (c.x + b.x) + (a.y - c.y) * (a.x + c.x));
     }
 };
 
